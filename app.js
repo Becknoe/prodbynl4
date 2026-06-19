@@ -1,7 +1,7 @@
-// CONFIGURATION AIRTABLE (Mets tes vrais codes entre les guillemets)
-const AIRTABLE_BASE_ID = "TON_ID_DE_BASE"; 
-const AIRTABLE_TOKEN = "TON_TOKEN_SECRET"; 
-const TABLE_NAME = "Beats"; // Le nom de ton tableau Airtable
+// CONFIGURATION AIRTABLE MISE À JOUR
+const AIRTABLE_BASE_ID = "appRL2xfRfJvSIs9m"; 
+const AIRTABLE_TOKEN = "patLnTJtzZ3LmNiUe.de7e9c9af5fb7c46231106cfd62507258b799b65bcbe174ed96f67372d0ff151"; 
+const TABLE_NAME = "Tableau 1"; // Ajuste ici si tu as renommé ton onglet dans Airtable (ex: "Beats")
 
 async function fetchBeats() {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`;
@@ -15,17 +15,22 @@ async function fetchBeats() {
         
         const data = await response.json();
         const playlistDiv = document.getElementById('playlist');
-        playlistDiv.innerHTML = ''; // On vide le message de chargement
+        playlistDiv.innerHTML = ''; 
 
-        // On filtre pour ne prendre que ceux qui ont le statut "En ligne"
-        const records = data.records.filter(record => record.fields.Statut === "En ligne");
-
-        if (records.length === 0) {
-            playlistDiv.innerHTML = "<p>Aucun beat en ligne pour le moment.</p>";
+        if (data.error) {
+            console.error("Erreur API Airtable:", data.error);
+            playlistDiv.innerHTML = `<p>Erreur : Vérifie que le nom de l'onglet est bien "${TABLE_NAME}" dans Airtable.</p>`;
             return;
         }
 
-        // On affiche chaque beat
+        // Filtrer pour afficher uniquement les beats "En ligne"
+        const records = data.records ? data.records.filter(record => record.fields.Statut === "En ligne") : [];
+
+        if (records.length === 0) {
+            playlistDiv.innerHTML = "<p>Aucun beat trouvé avec le statut 'En ligne'. Vérifie ton tableau !</p>";
+            return;
+        }
+
         records.forEach(record => {
             const fields = record.fields;
             const title = fields.Titre || "Sans titre";
@@ -45,10 +50,9 @@ async function fetchBeats() {
         });
 
     } catch (error) {
-        console.error("Erreur Airtable:", error);
-        document.getElementById('playlist').innerHTML = "<p>Erreur lors du chargement des beats.</p>";
+        console.error("Erreur:", error);
+        document.getElementById('playlist').innerHTML = "<p>Erreur de connexion au serveur.</p>";
     }
 }
 
-// Lancer le chargement au démarrage de la page
 fetchBeats();
