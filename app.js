@@ -1,7 +1,6 @@
-// CONFIGURATION AIRTABLE STRICTE
 const AIRTABLE_BASE_ID = "appRL2xfRfJvSIs9m"; 
 const AIRTABLE_TOKEN = "patLnTJtzZ3LmNiUe.de7e9c9af5fb7c46231106cfd62507258b799b65bcbe174ed96f67372d0ff151"; 
-const TABLE_NAME = "Table 1"; // Modifié ici pour correspondre à ton onglet Airtable
+const TABLE_NAME = "tblYBIPbEtjFSCuNK"; // L'ID technique, impossible qu'il se trompe
 
 async function fetchBeats() {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`;
@@ -18,16 +17,15 @@ async function fetchBeats() {
         playlistDiv.innerHTML = ''; 
 
         if (data.error) {
-            console.error("Erreur API Airtable:", data.error);
-            playlistDiv.innerHTML = `<p>Erreur API : ${data.error.message}</p>`;
+            console.error("Erreur API:", data.error);
+            playlistDiv.innerHTML = `<p>Erreur serveur : ${data.error.message}</p>`;
             return;
         }
 
-        // On cherche le champ "Status" (avec un s) comme sur ta capture d'écran
         const records = data.records ? data.records.filter(record => record.fields.Status === "En ligne") : [];
 
         if (records.length === 0) {
-            playlistDiv.innerHTML = "<p>Aucun beat trouvé avec le statut 'En ligne'. Vérifie ton tableau !</p>";
+            playlistDiv.innerHTML = "<p>Aucun beat trouvé.</p>";
             return;
         }
 
@@ -42,7 +40,7 @@ async function fetchBeats() {
                     <img src="${coverUrl}" alt="${title}">
                     <div>
                         <h3>${title}</h3>
-                        ${audioUrl ? `<audio controls src="${audioUrl}"></audio>` : '<p style="color:gray;">Pas de fichier audio</p>'}
+                        ${audioUrl ? `<audio controls src="${audioUrl}"></audio>` : '<p style="color:gray;">Pas d'audio</p>'}
                     </div>
                 </div>
             `;
@@ -51,7 +49,7 @@ async function fetchBeats() {
 
     } catch (error) {
         console.error("Erreur:", error);
-        document.getElementById('playlist').innerHTML = "<p>Erreur de connexion au serveur.</p>";
+        document.getElementById('playlist').innerHTML = "<p>Erreur critique.</p>";
     }
 }
 
