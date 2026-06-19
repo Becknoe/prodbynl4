@@ -1,6 +1,6 @@
 const AIRTABLE_BASE_ID = "appRL2xfRfJvSIs9m"; 
 const AIRTABLE_TOKEN = "patLnTJtzZ3LmNiUe.de7e9c9af5fb7c46231106cfd62507258b799b65bcbe174ed96f67372d0ff151"; 
-const TABLE_NAME = "tblYBIPbEtjFSCuNK"; // L'ID technique, impossible qu'il se trompe
+const TABLE_NAME = "tblYBIPbEtjFSCuNK";
 
 async function fetchBeats() {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`;
@@ -40,7 +40,7 @@ async function fetchBeats() {
                     <img src="${coverUrl}" alt="${title}">
                     <div>
                         <h3>${title}</h3>
-                        ${audioUrl ? `<audio controls src="${audioUrl}"></audio>` : '<p style="color:gray;">Pas d'audio</p>'}
+                        ${audioUrl ? `<audio controls src="${audioUrl}"></audio>` : '<p style="color:gray;">Pas de fichier audio</p>'}
                     </div>
                 </div>
             `;
