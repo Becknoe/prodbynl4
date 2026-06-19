@@ -1,7 +1,7 @@
-// CONFIGURATION AIRTABLE MISE À JOUR
+// CONFIGURATION AIRTABLE STRICTE
 const AIRTABLE_BASE_ID = "appRL2xfRfJvSIs9m"; 
 const AIRTABLE_TOKEN = "patLnTJtzZ3LmNiUe.de7e9c9af5fb7c46231106cfd62507258b799b65bcbe174ed96f67372d0ff151"; 
-const TABLE_NAME = "ProdByNL4"; // Ajuste ici si tu as renommé ton onglet dans Airtable (ex: "Beats")
+const TABLE_NAME = "Table 1"; // Modifié ici pour correspondre à ton onglet Airtable
 
 async function fetchBeats() {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`;
@@ -19,12 +19,12 @@ async function fetchBeats() {
 
         if (data.error) {
             console.error("Erreur API Airtable:", data.error);
-            playlistDiv.innerHTML = `<p>Erreur : Vérifie que le nom de l'onglet est bien "${TABLE_NAME}" dans Airtable.</p>`;
+            playlistDiv.innerHTML = `<p>Erreur API : ${data.error.message}</p>`;
             return;
         }
 
-        // Filtrer pour afficher uniquement les beats "En ligne"
-        const records = data.records ? data.records.filter(record => record.fields.Statut === "En ligne") : [];
+        // On cherche le champ "Status" (avec un s) comme sur ta capture d'écran
+        const records = data.records ? data.records.filter(record => record.fields.Status === "En ligne") : [];
 
         if (records.length === 0) {
             playlistDiv.innerHTML = "<p>Aucun beat trouvé avec le statut 'En ligne'. Vérifie ton tableau !</p>";
