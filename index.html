@@ -1,20 +1,137 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Playlist Beatmaker</title>
-    <style>
-        body { font-family: sans-serif; background: #121212; color: white; padding: 40px; }
-        .track { background: #1e1e1e; padding: 20px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 20px; }
-        img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ProdbyNL4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:    #0f0f0e;   /* gris chaud, pas noir */
+    --ink:   #e8e6e1;   /* blanc cassé chaud */
+    --muted: #76746d;
+    --line:  rgba(232,230,225,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Mono', monospace;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* grain de film — la seule texture */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 100; pointer-events: none;
+    opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 22px; }
+
+  /* barre haute, minuscule */
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 0; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* le nom, en gros, c'est tout */
+  .name {
+    font-family: 'Anton', sans-serif; font-weight: 400;
+    font-size: clamp(110px, 34vw, 300px); line-height: 0.8;
+    letter-spacing: -0.02em;
+    padding: 8vh 0 7vh;
+    animation: in .7s ease both;
+  }
+  @keyframes in { from { opacity: 0; transform: translateY(14px); } }
+
+  /* liste de beats, brute */
+  #playlist { counter-reset: t; border-top: 1px solid var(--line); }
+
+  #playlist > p {
+    color: var(--muted); font-size: 13px; padding: 26px 0; letter-spacing: 0.05em;
+  }
+
+  .track {
+    counter-increment: t;
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 4px; border-bottom: 1px solid var(--line);
+    transition: padding-left .2s ease;
+    animation: in .5s ease both;
+  }
+  .track:hover { padding-left: 12px; }
+
+  .track::before {
+    content: counter(t, decimal-leading-zero);
+    font-size: 12px; color: var(--muted); width: 26px; flex-shrink: 0;
+  }
+
+  .track img {
+    width: 46px; height: 46px; object-fit: cover; flex-shrink: 0;
+    filter: grayscale(1) contrast(1.05); transition: filter .25s ease;
+  }
+  .track:hover img { filter: grayscale(0); }
+
+  .track > div {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  }
+  @media (max-width: 560px) {
+    .track > div { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+
+  .track h3 {
+    font-family: 'Anton', sans-serif; font-weight: 400; font-size: 22px;
+    letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .track audio { height: 34px; width: 220px; max-width: 100%; filter: grayscale(1); opacity: 0.9; }
+  .track p { color: var(--muted); font-size: 12px; }
+
+  footer {
+    padding: 40px 0 60px; font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+</style>
 </head>
 <body>
+  <div class="wrap">
 
-    <h1>Les Beats de mon pote (Test)</h1>
-    <div id="playlist">Chargement des prods...</div>
+    <div class="top">
+      <span>prodbynl4</span>
+      <span id="count"></span>
+    </div>
 
-    <script src="app.js"></script>
+    <h1 class="name">NL4</h1>
+
+    <!-- app.js remplit ça, ne pas toucher l'id -->
+    <div id="playlist">chargement…</div>
+
+    <footer>© nl4</footer>
+
+  </div>
+
+  <script>
+    // petit compteur de beats, rien d'autre
+    (function () {
+      const list = document.getElementById('playlist');
+      const out = document.getElementById('count');
+      const update = () => {
+        const n = list.querySelectorAll('.track').length;
+        out.textContent = n ? n + (n > 1 ? ' beats' : ' beat') : '';
+      };
+      new MutationObserver(update).observe(list, { childList: true });
+    })();
+  </script>
+
+  <!-- ton app.js, inchangé -->
+  <script src="app.js"></script>
 </body>
 </html>
