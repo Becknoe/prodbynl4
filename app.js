@@ -1,7 +1,7 @@
 // CONFIGURATION AIRTABLE MISE À JOUR
 const AIRTABLE_BASE_ID = "appRL2xfRfJvSIs9m"; 
 const AIRTABLE_TOKEN = "patLnTJtzZ3LmNiUe.de7e9c9af5fb7c46231106cfd62507258b799b65bcbe174ed96f67372d0ff151"; 
-const TABLE_NAME = "Tableau 1"; // Ajuste ici si tu as renommé ton onglet dans Airtable (ex: "Beats")
+const TABLE_NAME = "ProdByNL4"; // Ajuste ici si tu as renommé ton onglet dans Airtable (ex: "Beats")
 
 async function fetchBeats() {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`;
