@@ -331,12 +331,14 @@
     });
     addEventListener('keydown',e=>{ if(e.code==='Space' && current){ e.preventDefault(); toggle(); }});
 
-    /* ---------- rendu réactif (MODE NERVEUX) ---------- */
-   /* ---------- rendu réactif (MODE WINAMP / WMP DELIRE) ---------- */
+  /* ---------- rendu réactif (MODE UNDERGROUND / LA FÈVE / FLUIDE) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
-    // On ajoute une variable "time" pour faire tourner l'animation
     let W,H,DPR, colCur=[233,231,226], curE=0, curB=0, time=0;
-    
+
+    // Sécurité : on fond le canvas dans le décor pour pas bouffer ton UI
+    fx.style.mixBlendMode = 'screen';
+    fx.style.opacity = '0.7';
+
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
     resize(); addEventListener('resize',resize);
     function avg(arr,a,b){ let s=0; for(let i=a;i<b;i++) s+=arr[i]; return s/((b-a)*255); }
@@ -347,107 +349,73 @@
       if(current && !player.paused){
         if(audioReady){ 
           analyser.getByteFrequencyData(freq);
-          tB = avg(freq, 0, 4); 
+          tB = avg(freq, 0, 4); // Gros focus sur les Kicks / 808
           tE = avg(freq, 1, freq.length); 
-          tB = Math.pow(tB, 1.5); 
-        }
-        else { 
+          tB = Math.pow(tB, 1.8); // Rendu exponentiel pour que l'impact soit vraiment lourd
+        } else { 
           const t=performance.now()/1000;
           tE=0.42+0.15*Math.sin(t*2.7);
           tB=0.52+0.26*Math.sin(t*1.9); 
         }
       }
       
-      // Interpolation nerveuse
-      curE += (tE - curE) * (tE > curE ? 0.6 : 0.1); 
-      curB += (tB - curB) * (tB > curB ? 0.7 : 0.15);
+      // Montée rapide, descente très lente (effet "sludge" / sirop)
+      curE += (tE - curE) * (tE > curE ? 0.3 : 0.05); 
+      curB += (tB - curB) * (tB > curB ? 0.6 : 0.08);
       
-      // La rotation de base accélère violemment quand la basse tape
-      time += 0.005 + (curB * 0.04); 
+      time += 0.002 + (curB * 0.01); 
 
-      // Effet de zoom sur la pochette en fond (impact)
-      ambient.style.transform = `scale(${(1.06 + curB * 0.3).toFixed(3)})`;
-      if (ambient.classList.contains('on')) {
-          ambient.style.opacity = (0.6 + curB * 0.6).toFixed(2);
-      }
+      // Le fond ambiant "respire" avec la basse
+      ambient.style.transform = `scale(${(1.05 + curB * 0.15).toFixed(3)})`;
+      if(ambient.classList.contains('on')) ambient.style.opacity = (0.3 + curB * 0.5).toFixed(2);
 
-      g.clearRect(0,0,W,H);
+      // ASTUCE : Au lieu d'effacer sec, on repeint en noir transparent.
+      // Ça crée un énorme "motion blur" très sombre et baveux, typique de l'esthétique.
+      g.globalCompositeOperation = 'source-over';
+      g.fillStyle = `rgba(13, 13, 12, ${0.15 - curB * 0.08})`; // Sur les grosses 808, ça s'efface moins vite (longues traînées)
+      g.fillRect(0, 0, W, H);
 
-      // VIBE VISUALISEUR WINDOWS MEDIA PLAYER
+      g.globalCompositeOperation = 'screen';
+
       if(curE > 0.01 || current) {
-        const cx = W/2, cy = H/2;
         const [r,gg,b] = colCur;
         
-        g.globalCompositeOperation = 'screen';
-        
-        // 1. L'Aura fractale (3 rubans entrelacés qui tournent)
-        const layers = 3;
-        for(let l = 0; l < layers; l++) {
+        // On génère 3 énormes flaques de lumière fluides (heat map vibe)
+        const blobs = 3;
+        for(let i=0; i<blobs; i++) {
+           const tOffset = time + (i * 50);
+           
+           // Mouvement lent et ample qui traverse tout l'écran
+           const posX = (W/2) + Math.cos(tOffset * 0.8 + i*2) * (W * 0.4);
+           const posY = (H/2) + Math.sin(tOffset * 0.6 + i*3) * (H * 0.4);
+           
+           // Taille massive (prend presque tout l'écran) qui gonfle à mort sur les 808
+           const radius = Math.min(W,H) * (0.6 + i*0.15 + curE*0.3 + curB*0.8);
+           
+           const grad = g.createRadialGradient(posX, posY, 0, posX, posY, radius);
+           
+           // Opacité très légère pour que ça reste dans le fond
+           const coreAlpha = Math.min(1, 0.1 + curB*0.4); 
+           const midAlpha = Math.min(1, 0.05 + curE*0.1);
+           
+           const boost = curB * 100; // Léger flash clair au centre
+           
+           grad.addColorStop(0, `rgba(${Math.min(255, r+boost)}, ${Math.min(255, gg+boost)}, ${Math.min(255, b+boost)}, ${coreAlpha})`);
+           grad.addColorStop(0.5, `rgba(${r}, ${gg}, ${b}, ${midAlpha})`);
+           grad.addColorStop(1, 'rgba(0,0,0,0)');
+           
+           g.fillStyle = grad;
            g.beginPath();
-           const points = 120; // Résolution des rubans
-           const angleStep = (Math.PI * 2) / points;
-           
-           for(let i = 0; i <= points; i++) {
-               const index = i % points;
-               // On map le ruban sur les fréquences audio
-               const fVal = audioReady ? freq[index] / 255 : (Math.sin(index * 0.1 + time) + 1)/2;
-               
-               // Rayon de base + déformation qui grandit selon la couche
-               const baseR = Math.min(W,H) * 0.1;
-               const deform = fVal * Math.min(W,H) * (0.15 + l * 0.1) * curE;
-               const radius = baseR + deform;
-               
-               // Les couches tournent dans des sens opposés pour un effet 3D psychédélique
-               const angle = (i * angleStep) + time * (l % 2 === 0 ? 1 : -1.5);
-               
-               const x = cx + Math.cos(angle) * radius;
-               const y = cy + Math.sin(angle) * radius;
-               
-               if(i === 0) g.moveTo(x,y);
-               else g.lineTo(x,y);
-           }
-           g.closePath();
-           
-           // Trait couleur néon avec dégradé d'opacité
-           g.lineWidth = 2 + l;
-           g.strokeStyle = `rgba(${r}, ${gg}, ${b}, ${1 - l * 0.3})`;
-           g.stroke();
-           
-           // Remplissage du centre pour faire un "coeur" lumineux
-           if(l === 0) {
-               g.fillStyle = `rgba(${r}, ${gg}, ${b}, ${0.1 + curB * 0.3})`;
-               g.fill();
-           }
+           g.arc(posX, posY, radius, 0, Math.PI*2);
+           g.fill();
         }
 
-        // 2. Le Starburst (Pics d'EQ autour de la fractale)
-        if(audioReady) {
-            const bars = 50; 
-            const step = (Math.PI * 2) / bars;
-            
-            for(let i = 0; i < bars; i++) {
-                // On espasse la lecture des fréquences pour choper tout le spectre
-                const fIndex = Math.floor(i * (120 / bars));
-                const fVal = Math.pow(freq[fIndex] / 255, 2); // Exponentiel pour des pointes aiguës
-                
-                if(fVal > 0.05) {
-                    // Les barres tournent à l'inverse du coeur
-                    const a = i * step - time * 0.5; 
-                    
-                    const startR = Math.min(W,H) * 0.1 + (curB * 50);
-                    const endR = startR + (fVal * Math.min(W,H) * 0.35);
-                    
-                    g.beginPath();
-                    g.moveTo(cx + Math.cos(a) * startR, cy + Math.sin(a) * startR);
-                    g.lineTo(cx + Math.cos(a) * endR, cy + Math.sin(a) * endR);
-                    
-                    g.lineWidth = 4;
-                    // Flash : la pointe vire au blanc pur si la fréquence est très forte
-                    const boost = fVal * 180;
-                    g.strokeStyle = `rgba(${Math.min(255, r+boost)}, ${Math.min(255, gg+boost)}, ${Math.min(255, b+boost)}, ${fVal + 0.2})`;
-                    g.stroke();
-                }
-            }
+        // VIBE LA FÈVE / ERRR : Glitch / screen-tearing sur les énormes kicks
+        // Ça décale et étire l'image d'elle-même
+        if(curB > 0.7) {
+           const shift = (Math.random() - 0.5) * curB * 50;
+           g.globalCompositeOperation = 'source-over';
+           g.drawImage(fx, shift, (Math.random()-0.5)*15);
         }
       }
     }
