@@ -50,23 +50,28 @@ async function fetchBeats() {
 
         // 2. Gestion de la lecture aléatoire et de la pause
         const audios = document.querySelectorAll('#playlist audio');
+        
+        // MOUCHARD 1 : Vérifier si on trouve bien les lecteurs audio
+        console.log(`Initialisation : ${audios.length} lecteurs audio trouvés.`);
 
         audios.forEach(audio => {
-            // Lancer un autre son aléatoire à la fin
+            // Écouteur pour la fin du son
             audio.addEventListener('ended', (event) => {
-                // On exclut le son qui vient de se terminer pour ne pas le rejouer deux fois de suite
+                // MOUCHARD 2 : Vérifier si la fin est détectée
+                console.log("Un son vient de se terminer ! Recherche d'une nouvelle piste...");
+                
                 const autresAudios = Array.from(audios).filter(a => a !== event.target);
                 
                 if (autresAudios.length > 0) {
                     const randomIndex = Math.floor(Math.random() * autresAudios.length);
+                    console.log(`Lancement de la piste index n°${randomIndex}`);
                     autresAudios[randomIndex].play();
                 } else {
-                    // S'il n'y a qu'un seul son dispo dans la base, on le tourne en boucle
                     event.target.play();
                 }
             });
 
-            // Mettre en pause les autres quand un son est lancé manuellement (ou automatiquement)
+            // Écouteur pour mettre en pause les autres
             audio.addEventListener('play', (event) => {
                 audios.forEach(a => {
                     if (a !== event.target) {
@@ -77,8 +82,8 @@ async function fetchBeats() {
         });
 
     } catch (error) {
-        console.error("Erreur:", error);
-        document.getElementById('playlist').innerHTML = "<p>Erreur critique.</p>";
+        console.error("Erreur critique:", error);
+        document.getElementById('playlist').innerHTML = "<p>Erreur critique lors du chargement.</p>";
     }
 }
 
