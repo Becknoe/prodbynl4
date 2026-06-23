@@ -331,7 +331,7 @@
     });
     addEventListener('keydown',e=>{ if(e.code==='Space' && current){ e.preventDefault(); toggle(); }});
 
-    /* ---------- rendu réactif ---------- */
+    /* ---------- rendu réactif (MODE NERVEUX) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
     let W,H,DPR, colCur=[233,231,226], curE=0, curB=0;
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
@@ -342,26 +342,54 @@
       requestAnimationFrame(tick);
       let tE=0,tB=0;
       if(current && !player.paused){
-        if(audioReady){ analyser.getByteFrequencyData(freq);
-          tB=avg(freq,1,8); tE=avg(freq,1,freq.length); }
-        else { const t=performance.now()/1000;
+        if(audioReady){ 
+          analyser.getByteFrequencyData(freq);
+          // On cible spécifiquement les Sub/Kicks (index 0 à 4) au lieu des basses larges
+          tB = avg(freq, 0, 4); 
+          tE = avg(freq, 1, freq.length); 
+          
+          // Accentuation exponentielle pour rendre l'impact des basses plus violent
+          tB = Math.pow(tB, 1.5); 
+        }
+        else { 
+          const t=performance.now()/1000;
           tE=0.42+0.15*Math.sin(t*2.7)+0.06*Math.sin(t*6.3);
-          tB=0.52+0.26*Math.sin(t*1.9); }
+          tB=0.52+0.26*Math.sin(t*1.9); 
+        }
       }
-      curE+=(tE-curE)*0.12; curB+=(tB-curB)*0.2;
+      
+      // MAGIE ICI : Interpolation asymétrique. 
+      // Si le beat frappe, on monte instantanément (0.7). Sinon, on redescend doucement (0.1)
+      curE += (tE - curE) * (tE > curE ? 0.6 : 0.1); 
+      curB += (tB - curB) * (tB > curB ? 0.7 : 0.15);
 
-      // la pochette respire sur les basses
-      ambient.style.transform=`scale(${(1.06+curB*0.16).toFixed(3)})`;
+      // La pochette encaisse un gros coup de kick (zoom bcp plus fort)
+      ambient.style.transform = `scale(${(1.06 + curB * 0.45).toFixed(3)})`;
+      
+      // Le fond s'illumine au rythme du beat (flash d'opacité)
+      if (ambient.classList.contains('on')) {
+          ambient.style.opacity = (0.6 + curB * 0.6).toFixed(2);
+      }
 
-      // halo coloré pulsant
+      // Halo coloré pulsant bcp plus agressif
       g.clearRect(0,0,W,H);
       if(curE>0.01){
-        const cx=W/2, cy=H*0.46, R=Math.min(W,H)*(0.22+curE*0.6);
+        const cx=W/2, cy=H*0.46;
+        // Le halo s'étend beaucoup plus loin sur les basses
+        const R = Math.min(W,H) * (0.2 + curE * 0.5 + curB * 0.5); 
+        
         const grad=g.createRadialGradient(cx,cy,0,cx,cy,R);
         const [r,gg,b]=colCur;
-        grad.addColorStop(0,`rgba(${r},${gg},${b},${0.5*curE})`);
-        grad.addColorStop(0.5,`rgba(${r},${gg},${b},${0.16*curE})`);
-        grad.addColorStop(1,'rgba(0,0,0,0)');
+        
+        // Le centre sature vers le blanc au moment de l'impact
+        const flashAlpha = Math.min(1, 0.5 * curE + 0.5 * curB);
+        const coreAlpha = Math.min(1, flashAlpha + curB * 0.5);
+        const boostColor = curB * 120; // Ajoute du blanc
+        
+        grad.addColorStop(0, `rgba(${Math.min(255, r + boostColor)}, ${Math.min(255, gg + boostColor)}, ${Math.min(255, b + boostColor)}, ${coreAlpha})`);
+        grad.addColorStop(0.3, `rgba(${r}, ${gg}, ${b}, ${flashAlpha * 0.7})`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        
         g.globalCompositeOperation='screen';
         g.fillStyle=grad; g.beginPath(); g.arc(cx,cy,R,0,6.283); g.fill();
       }
