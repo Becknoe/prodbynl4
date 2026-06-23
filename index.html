@@ -332,8 +332,11 @@
     addEventListener('keydown',e=>{ if(e.code==='Space' && current){ e.preventDefault(); toggle(); }});
 
     /* ---------- rendu réactif (MODE NERVEUX) ---------- */
+   /* ---------- rendu réactif (MODE WINAMP / WMP DELIRE) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
-    let W,H,DPR, colCur=[233,231,226], curE=0, curB=0;
+    // On ajoute une variable "time" pour faire tourner l'animation
+    let W,H,DPR, colCur=[233,231,226], curE=0, curB=0, time=0;
+    
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
     resize(); addEventListener('resize',resize);
     function avg(arr,a,b){ let s=0; for(let i=a;i<b;i++) s+=arr[i]; return s/((b-a)*255); }
@@ -344,54 +347,108 @@
       if(current && !player.paused){
         if(audioReady){ 
           analyser.getByteFrequencyData(freq);
-          // On cible spécifiquement les Sub/Kicks (index 0 à 4) au lieu des basses larges
           tB = avg(freq, 0, 4); 
           tE = avg(freq, 1, freq.length); 
-          
-          // Accentuation exponentielle pour rendre l'impact des basses plus violent
           tB = Math.pow(tB, 1.5); 
         }
         else { 
           const t=performance.now()/1000;
-          tE=0.42+0.15*Math.sin(t*2.7)+0.06*Math.sin(t*6.3);
+          tE=0.42+0.15*Math.sin(t*2.7);
           tB=0.52+0.26*Math.sin(t*1.9); 
         }
       }
       
-      // MAGIE ICI : Interpolation asymétrique. 
-      // Si le beat frappe, on monte instantanément (0.7). Sinon, on redescend doucement (0.1)
+      // Interpolation nerveuse
       curE += (tE - curE) * (tE > curE ? 0.6 : 0.1); 
       curB += (tB - curB) * (tB > curB ? 0.7 : 0.15);
-
-      // La pochette encaisse un gros coup de kick (zoom bcp plus fort)
-      ambient.style.transform = `scale(${(1.06 + curB * 0.45).toFixed(3)})`;
       
-      // Le fond s'illumine au rythme du beat (flash d'opacité)
+      // La rotation de base accélère violemment quand la basse tape
+      time += 0.005 + (curB * 0.04); 
+
+      // Effet de zoom sur la pochette en fond (impact)
+      ambient.style.transform = `scale(${(1.06 + curB * 0.3).toFixed(3)})`;
       if (ambient.classList.contains('on')) {
           ambient.style.opacity = (0.6 + curB * 0.6).toFixed(2);
       }
 
-      // Halo coloré pulsant bcp plus agressif
       g.clearRect(0,0,W,H);
-      if(curE>0.01){
-        const cx=W/2, cy=H*0.46;
-        // Le halo s'étend beaucoup plus loin sur les basses
-        const R = Math.min(W,H) * (0.2 + curE * 0.5 + curB * 0.5); 
+
+      // VIBE VISUALISEUR WINDOWS MEDIA PLAYER
+      if(curE > 0.01 || current) {
+        const cx = W/2, cy = H/2;
+        const [r,gg,b] = colCur;
         
-        const grad=g.createRadialGradient(cx,cy,0,cx,cy,R);
-        const [r,gg,b]=colCur;
+        g.globalCompositeOperation = 'screen';
         
-        // Le centre sature vers le blanc au moment de l'impact
-        const flashAlpha = Math.min(1, 0.5 * curE + 0.5 * curB);
-        const coreAlpha = Math.min(1, flashAlpha + curB * 0.5);
-        const boostColor = curB * 120; // Ajoute du blanc
-        
-        grad.addColorStop(0, `rgba(${Math.min(255, r + boostColor)}, ${Math.min(255, gg + boostColor)}, ${Math.min(255, b + boostColor)}, ${coreAlpha})`);
-        grad.addColorStop(0.3, `rgba(${r}, ${gg}, ${b}, ${flashAlpha * 0.7})`);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        
-        g.globalCompositeOperation='screen';
-        g.fillStyle=grad; g.beginPath(); g.arc(cx,cy,R,0,6.283); g.fill();
+        // 1. L'Aura fractale (3 rubans entrelacés qui tournent)
+        const layers = 3;
+        for(let l = 0; l < layers; l++) {
+           g.beginPath();
+           const points = 120; // Résolution des rubans
+           const angleStep = (Math.PI * 2) / points;
+           
+           for(let i = 0; i <= points; i++) {
+               const index = i % points;
+               // On map le ruban sur les fréquences audio
+               const fVal = audioReady ? freq[index] / 255 : (Math.sin(index * 0.1 + time) + 1)/2;
+               
+               // Rayon de base + déformation qui grandit selon la couche
+               const baseR = Math.min(W,H) * 0.1;
+               const deform = fVal * Math.min(W,H) * (0.15 + l * 0.1) * curE;
+               const radius = baseR + deform;
+               
+               // Les couches tournent dans des sens opposés pour un effet 3D psychédélique
+               const angle = (i * angleStep) + time * (l % 2 === 0 ? 1 : -1.5);
+               
+               const x = cx + Math.cos(angle) * radius;
+               const y = cy + Math.sin(angle) * radius;
+               
+               if(i === 0) g.moveTo(x,y);
+               else g.lineTo(x,y);
+           }
+           g.closePath();
+           
+           // Trait couleur néon avec dégradé d'opacité
+           g.lineWidth = 2 + l;
+           g.strokeStyle = `rgba(${r}, ${gg}, ${b}, ${1 - l * 0.3})`;
+           g.stroke();
+           
+           // Remplissage du centre pour faire un "coeur" lumineux
+           if(l === 0) {
+               g.fillStyle = `rgba(${r}, ${gg}, ${b}, ${0.1 + curB * 0.3})`;
+               g.fill();
+           }
+        }
+
+        // 2. Le Starburst (Pics d'EQ autour de la fractale)
+        if(audioReady) {
+            const bars = 50; 
+            const step = (Math.PI * 2) / bars;
+            
+            for(let i = 0; i < bars; i++) {
+                // On espasse la lecture des fréquences pour choper tout le spectre
+                const fIndex = Math.floor(i * (120 / bars));
+                const fVal = Math.pow(freq[fIndex] / 255, 2); // Exponentiel pour des pointes aiguës
+                
+                if(fVal > 0.05) {
+                    // Les barres tournent à l'inverse du coeur
+                    const a = i * step - time * 0.5; 
+                    
+                    const startR = Math.min(W,H) * 0.1 + (curB * 50);
+                    const endR = startR + (fVal * Math.min(W,H) * 0.35);
+                    
+                    g.beginPath();
+                    g.moveTo(cx + Math.cos(a) * startR, cy + Math.sin(a) * startR);
+                    g.lineTo(cx + Math.cos(a) * endR, cy + Math.sin(a) * endR);
+                    
+                    g.lineWidth = 4;
+                    // Flash : la pointe vire au blanc pur si la fréquence est très forte
+                    const boost = fVal * 180;
+                    g.strokeStyle = `rgba(${Math.min(255, r+boost)}, ${Math.min(255, gg+boost)}, ${Math.min(255, b+boost)}, ${fVal + 0.2})`;
+                    g.stroke();
+                }
+            }
+        }
       }
     }
     tick();
