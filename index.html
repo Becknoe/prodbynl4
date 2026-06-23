@@ -331,13 +331,14 @@
     });
     addEventListener('keydown',e=>{ if(e.code==='Space' && current){ e.preventDefault(); toggle(); }});
 
-  /* ---------- rendu réactif (MODE UNDERGROUND / LA FÈVE / FLUIDE) ---------- */
+/* ---------- rendu réactif (MODE TÂCHES MASSIVES & FLOU EXTRÊME) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
     let W,H,DPR, colCur=[233,231,226], curE=0, curB=0, time=0;
 
-    // Sécurité : on fond le canvas dans le décor pour pas bouffer ton UI
+    // LE SECRET EST LÀ : Un flou gigantesque + boost de couleur, mais opacité réduite
+    fx.style.filter = 'blur(90px) saturate(1.8)';
     fx.style.mixBlendMode = 'screen';
-    fx.style.opacity = '0.7';
+    fx.style.opacity = '0.4'; // Assez bas pour que le texte reste 100% lisible
 
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
     resize(); addEventListener('resize',resize);
@@ -349,9 +350,9 @@
       if(current && !player.paused){
         if(audioReady){ 
           analyser.getByteFrequencyData(freq);
-          tB = avg(freq, 0, 4); // Gros focus sur les Kicks / 808
-          tE = avg(freq, 1, freq.length); 
-          tB = Math.pow(tB, 1.8); // Rendu exponentiel pour que l'impact soit vraiment lourd
+          tB = avg(freq, 0, 4); // Basses (Kicks/808)
+          tE = avg(freq, 1, freq.length); // Reste du spectre
+          tB = Math.pow(tB, 1.8);
         } else { 
           const t=performance.now()/1000;
           tE=0.42+0.15*Math.sin(t*2.7);
@@ -359,63 +360,41 @@
         }
       }
       
-      // Montée rapide, descente très lente (effet "sludge" / sirop)
       curE += (tE - curE) * (tE > curE ? 0.3 : 0.05); 
-      curB += (tB - curB) * (tB > curB ? 0.6 : 0.08);
-      
-      time += 0.002 + (curB * 0.01); 
+      curB += (tB - curB) * (tB > curB ? 0.5 : 0.08);
+      time += 0.002 + (curB * 0.008); 
 
-      // Le fond ambiant "respire" avec la basse
-      ambient.style.transform = `scale(${(1.05 + curB * 0.15).toFixed(3)})`;
-      if(ambient.classList.contains('on')) ambient.style.opacity = (0.3 + curB * 0.5).toFixed(2);
+      // La pochette ambiante en fond bouge très légèrement
+      ambient.style.transform = `scale(${(1.05 + curB * 0.08).toFixed(3)})`;
+      if(ambient.classList.contains('on')) ambient.style.opacity = (0.2 + curB * 0.3).toFixed(2);
 
-      // ASTUCE : Au lieu d'effacer sec, on repeint en noir transparent.
-      // Ça crée un énorme "motion blur" très sombre et baveux, typique de l'esthétique.
-      g.globalCompositeOperation = 'source-over';
-      g.fillStyle = `rgba(13, 13, 12, ${0.15 - curB * 0.08})`; // Sur les grosses 808, ça s'efface moins vite (longues traînées)
-      g.fillRect(0, 0, W, H);
-
-      g.globalCompositeOperation = 'screen';
+      // On nettoie l'écran à chaque frame (le flou CSS bave tout seul)
+      g.clearRect(0, 0, W, H);
 
       if(curE > 0.01 || current) {
         const [r,gg,b] = colCur;
         
-        // On génère 3 énormes flaques de lumière fluides (heat map vibe)
-        const blobs = 3;
+        // On génère 4 énormes tâches de couleurs qui se croisent
+        const blobs = 4;
         for(let i=0; i<blobs; i++) {
-           const tOffset = time + (i * 50);
+           const tOffset = time + (i * 100);
            
-           // Mouvement lent et ample qui traverse tout l'écran
-           const posX = (W/2) + Math.cos(tOffset * 0.8 + i*2) * (W * 0.4);
-           const posY = (H/2) + Math.sin(tOffset * 0.6 + i*3) * (H * 0.4);
+           // Mouvement très ample pour balayer tout l'écran
+           const posX = (W/2) + Math.cos(tOffset * 0.5 + i) * (W * 0.6);
+           const posY = (H/2) + Math.sin(tOffset * 0.4 + i*2) * (H * 0.6);
            
-           // Taille massive (prend presque tout l'écran) qui gonfle à mort sur les 808
-           const radius = Math.min(W,H) * (0.6 + i*0.15 + curE*0.3 + curB*0.8);
+           // Taille GIGANTESQUE : plus grand que l'écran lui-même
+           const baseRadius = Math.max(W, H) * 0.5;
+           // Gonfle avec les 808
+           const radius = baseRadius + (curB * Math.max(W, H) * 0.3);
            
-           const grad = g.createRadialGradient(posX, posY, 0, posX, posY, radius);
+           // Opacité des tâches
+           const alpha = 0.3 + (curB * 0.4) + (curE * 0.2);
            
-           // Opacité très légère pour que ça reste dans le fond
-           const coreAlpha = Math.min(1, 0.1 + curB*0.4); 
-           const midAlpha = Math.min(1, 0.05 + curE*0.1);
-           
-           const boost = curB * 100; // Léger flash clair au centre
-           
-           grad.addColorStop(0, `rgba(${Math.min(255, r+boost)}, ${Math.min(255, gg+boost)}, ${Math.min(255, b+boost)}, ${coreAlpha})`);
-           grad.addColorStop(0.5, `rgba(${r}, ${gg}, ${b}, ${midAlpha})`);
-           grad.addColorStop(1, 'rgba(0,0,0,0)');
-           
-           g.fillStyle = grad;
            g.beginPath();
+           g.fillStyle = `rgba(${r}, ${gg}, ${b}, ${alpha})`;
            g.arc(posX, posY, radius, 0, Math.PI*2);
            g.fill();
-        }
-
-        // VIBE LA FÈVE / ERRR : Glitch / screen-tearing sur les énormes kicks
-        // Ça décale et étire l'image d'elle-même
-        if(curB > 0.7) {
-           const shift = (Math.random() - 0.5) * curB * 50;
-           g.globalCompositeOperation = 'source-over';
-           g.drawImage(fx, shift, (Math.random()-0.5)*15);
         }
       }
     }
