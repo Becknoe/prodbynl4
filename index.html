@@ -1,64 +1,99 @@
-<style>
-    body {
-        margin: 0;
-        padding: 20px;
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        /* Un fond clair et lumineux, sans calque d'ombre */
-        background: linear-gradient(-45deg, #e3f2fd, #fce4ec, #e8f5e9, #fff3e0);
-        background-size: 400% 400%;
-        /* Une animation de fond "beaucoup plus animée" */
-        animation: gradientBG 15s ease infinite;
-        color: #333; /* Texte sombre pour la lisibilité sur fond clair */
-        display: flex;
-        justify-content: center;
-    }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Mini Site Beats</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            /* Fond clair, lumineux et animé */
+            background: linear-gradient(-45deg, #e3f2fd, #fce4ec, #e8f5e9, #fff3e0);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-    /* Définition de l'animation d'arrière-plan */
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-    #playlist {
-        max-width: 600px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.9); /* Cartes de playlist blanches et semi-transparentes */
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Ombre très légère */
-    }
+        h1 {
+            color: #222;
+            margin-bottom: 20px;
+            text-align: center;
+        }
 
-    .track {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        padding: 10px;
-        background: #fff;
-        border-radius: 10px;
-        transition: transform 0.2s ease;
-    }
+        #playlist {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85); /* Fond blanc semi-transparent */
+            backdrop-filter: blur(5px); /* Effet de flou moderne en arrière-plan */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
 
-    .track:hover {
-        transform: scale(1.02); /* Petit effet au survol */
-    }
+        .track {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    .track img {
-        width: 60px;
-        height: 60px;
-        border-radius: 8px;
-        margin-right: 15px;
-        object-fit: cover;
-    }
+        .track:last-child {
+            margin-bottom: 0;
+        }
 
-    .track h3 {
-        margin: 0 0 8px 0;
-        font-size: 1.1em;
-        color: #222;
-    }
+        .track:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
 
-    audio {
-        width: 100%;
-        height: 35px;
-    }
-</style>
+        .track img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .track > div {
+            flex-grow: 1;
+        }
+
+        .track h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1em;
+            color: #222;
+        }
+
+        audio {
+            width: 100%;
+            height: 32px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ma Playlist</h1>
+
+    <div id="playlist">Chargement des prods...</div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
