@@ -14,7 +14,7 @@
     --ink: #ffffff; 
     --muted: rgba(255, 255, 255, 0.65); 
     --line: rgba(255, 255, 255, 0.15);
-    --c: #ffffff; /* Couleur du son courant (modifiée par le JS) */
+    --c: #ffffff; 
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { scroll-behavior:smooth; }
@@ -70,11 +70,10 @@
     padding:30px; 
     margin-bottom: 40px;
     
-    /* Effet Liquid Glass */
-    background: rgba(255, 255, 255, 0.03); /* Très léger voile blanc */
+    background: rgba(255, 255, 255, 0.03); 
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Bordure réfléchissante */
+    border: 1px solid rgba(255, 255, 255, 0.15); 
     border-radius: 24px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
@@ -87,7 +86,7 @@
     transition:padding-left .3s ease, background .3s ease, border-radius .3s ease; 
     animation:rise .55s ease both;
   }
-  .track:last-child { border-bottom: none; } /* Enlève la ligne sous le dernier son */
+  .track:last-child { border-bottom: none; }
   
   .track:hover { 
       padding-left:20px; 
@@ -133,17 +132,15 @@
     position:fixed; left:0; right:0; bottom:0; z-index:80; pointer-events:none;
     opacity:0; transform:translateY(8px); transition:opacity .5s ease, transform .5s ease;
     
-    /* Effet masque pour cacher le texte au scroll */
-    background: rgba(180, 0, 0, 0.75); /* Rouge sombre translucide */
+    background: rgba(180, 0, 0, 0.75); 
     backdrop-filter: blur(24px) saturate(120%);
     -webkit-backdrop-filter: blur(24px) saturate(120%);
     border-top: 1px solid rgba(255, 255, 255, 0.15);
   }
-  /* On réactive les clics sur tout le HUD pour empêcher de cliquer sur les sons cachés dessous */
   body.playing .hud-play { opacity:1; transform:none; pointer-events:auto; }
   
   .seekline { position:relative; height:2px; background:rgba(255,255,255,0.15); cursor:pointer; }
-  .seekline::before { content:''; position:absolute; inset:-12px 0; } /* zone de clic plus large */
+  .seekline::before { content:''; position:absolute; inset:-12px 0; }
   .seekline .fill { position:absolute; left:0; top:0; bottom:0; width:0; background:var(--c); box-shadow:0 0 12px var(--c); }
   
   .readout {
@@ -182,7 +179,6 @@
     </div>
   </div>
 
-  <!-- contrôles ambiants -->
   <div class="hud-play">
     <div class="seekline" id="seek"><div class="fill" id="fill"></div></div>
     <div class="readout">
@@ -205,7 +201,7 @@
     const durEl   = document.getElementById('dur');
 
     document.getElementById('mq').innerHTML =
-      Array(8).fill('<span>prodbynl4 ✦ venelles</span>').join('');
+      Array(8).fill('<span>prodbynl4 ✦ selected beats</span>').join('');
 
     const fmt = s => (!s||isNaN(s)) ? '0:00'
       : Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
@@ -349,24 +345,21 @@
       player.currentTime=(e.clientX-r.left)/r.width*player.duration;
     });
     
-    // Le clic sur le bouton HUD gère la pause
     np.addEventListener('click',toggle);
     
-    // La touche Espace gère la pause
     addEventListener('keydown',e=>{ 
         if(e.code==='Space' && current){ 
             e.preventDefault(); toggle(); 
         }
     });
-    // SUPPRESSION DE L'ANCIEN ÉCOUTEUR DE CLIC SUR LE FOND ICI
 
-    /* ---------- rendu réactif (MODE TÂCHES RYTHMIQUES) ---------- */
+    /* ---------- rendu réactif (L'ENTRE-DEUX PARFAIT) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
     let W,H,DPR, colCur=[233,231,226], curE=0, curB=0, time=0, beatAccum=0;
 
-    fx.style.filter = 'blur(60px) saturate(2)';
+    fx.style.filter = 'blur(60px) saturate(1.8)';
     fx.style.mixBlendMode = 'screen';
-    fx.style.opacity = '0.6';
+    fx.style.opacity = '0.5';
 
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
     resize(); addEventListener('resize',resize);
@@ -388,14 +381,16 @@
         }
       }
       
-      curE += (tE - curE) * (tE > curE ? 0.4 : 0.05); 
-      curB += (tB - curB) * (tB > curB ? 0.7 : 0.1); // Descente rapide pour marquer le rythme
+      // Interpolation plus douce, montée un peu moins agressive, descente fluide
+      curE += (tE - curE) * (tE > curE ? 0.3 : 0.05); 
+      curB += (tB - curB) * (tB > curB ? 0.5 : 0.08); 
       
-      time += 0.002;
-      // Le secret du mouvement rythmique : l'orbite prend un coup d'accélérateur sur les Kicks
-      beatAccum += curB * 0.05; 
+      // Rotation de base lente et fluide
+      time += 0.0015;
+      // Impulsion très légère sur l'angle de rotation
+      beatAccum += curB * 0.015; 
 
-      ambient.style.transform = `scale(${(1.05 + curB * 0.08).toFixed(3)})`;
+      ambient.style.transform = `scale(${(1.05 + curB * 0.06).toFixed(3)})`;
       if(ambient.classList.contains('on')) ambient.style.opacity = (0.3 + curB * 0.2).toFixed(2);
 
       g.clearRect(0, 0, W, H);
@@ -405,20 +400,21 @@
         
         const blobs = 5;
         for(let i=0; i<blobs; i++) {
-           // Rotation autour du centre synchronisée sur le beat
-           const angle = (i * (Math.PI * 2) / blobs) + time + beatAccum * (i % 2 === 0 ? 1 : -0.8);
+           // Orbites fluides
+           const angle = (i * (Math.PI * 2) / blobs) + time + beatAccum * (i % 2 === 0 ? 1 : -1);
            
-           // Sur une grosse 808, la distance depuis le centre (pulseDist) augmente violemment (effet souffle)
-           const baseDist = Math.max(W, H) * 0.15;
-           const pulseDist = baseDist + (curB * Math.max(W, H) * 0.25);
+           // Le "saut" est beaucoup plus contenu : ça respire au lieu d'exploser
+           const baseDist = Math.max(W, H) * 0.2;
+           const pulseDist = baseDist + (curB * Math.max(W, H) * 0.1); // Réduit de 0.25 à 0.1
            
            const posX = (W/2) + Math.cos(angle) * pulseDist;
-           const posY = (H/2) + Math.sin(angle) * pulseDist * 0.8; // Trajectoire légèrement ovale
+           const posY = (H/2) + Math.sin(angle) * pulseDist * 0.7; 
            
-           const baseRadius = Math.max(W, H) * 0.15;
-           const radius = baseRadius + (curE * Math.max(W, H) * 0.1);
+           // Les tâches gonflent un peu plus proportionnellement pour faire un bel effet de fondu
+           const baseRadius = Math.max(W, H) * 0.2;
+           const radius = baseRadius + (curE * Math.max(W, H) * 0.1) + (curB * Math.max(W, H) * 0.05);
            
-           const alpha = 0.4 + (curB * 0.4);
+           const alpha = 0.35 + (curB * 0.3);
            
            g.beginPath();
            g.fillStyle = `rgba(${r}, ${gg}, ${b}, ${alpha})`;
