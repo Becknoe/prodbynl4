@@ -22,7 +22,6 @@
     min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased;
   }
 
-  /* fond : pochette floutée + canvas réactif + grain */
   #ambient {
     position:fixed; inset:-8%; z-index:0; background:center/cover no-repeat;
     filter:blur(70px) brightness(0.4) saturate(1.5); opacity:0;
@@ -46,10 +45,10 @@
     font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted);
   }
   .hero { min-height:75vh; display:flex; flex-direction:column; justify-content:center; }
+  
   .name {
     font-family:'Anton',sans-serif; font-size:clamp(120px,38vw,350px);
     line-height:0.76; letter-spacing:-0.02em; 
-    /* L'apparition du titre garde son transform car on ne le survole pas */
     animation: riseTitre 1s cubic-bezier(.2,.7,.2,1) both;
   }
   @keyframes riseTitre { from{opacity:0;transform:translateY(22px)} }
@@ -66,23 +65,23 @@
     text-transform:uppercase; color:var(--muted); padding:0 22px; }
   @keyframes slide { to{transform:translateX(-50%)} }
 
-  /* ===== SECTION PLAYLIST ===== */
+  /* ===== SECTION PLAYLIST (APPLE WATCH NID D'ABEILLE) ===== */
   #playlist { 
     counter-reset:t; 
-    padding:40px 0; 
-    margin-bottom: 80px;
+    padding:40px 0 120px 0; /* Padding bas étendu pour laisser de la place aux marges */
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 35px 25px; 
+    align-content: center;
+    max-width: 540px; /* Constraint la largeur pour forcer les bulles à s'agglutiner en nuage */
+    margin: 0 auto; 
     background: transparent; 
   }
   #playlist > p { color:var(--muted); font-size:13px; text-align:center; padding:20px 0; width: 100%; }
 
-  /* CORRECTION DU CONFLIT : L'apparition des bulles utilise "top" au lieu de "transform" */
-  @keyframes riseBulle { 
-      from { opacity: 0; top: 25px; } 
-      to { opacity: 1; top: 0px; } 
+  @keyframes popIn { 
+      from { opacity: 0; transform: scale(0.3); } 
+      to { opacity: 1; transform: scale(1); } 
   }
 
   .track {
@@ -90,50 +89,68 @@
     display:flex; 
     flex-direction: column;
     align-items: center;
-    width: 110px; 
+    width: 100px; 
     cursor: pointer; 
     position: relative;
     z-index: 1;
+
+    /* Très rapprochées de base pour l'effet cluster */
+    margin: 10px -2px; 
+
+    /* LA MAGIE EST ICI : On anime le zoom (transform) ET l'encombrement (margin) simultanément */
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                margin 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                z-index 0s linear 0.6s; 
     
-    /* ANIMATION SMOOTH APPLE : Délai de 0.6s sur le z-index pour le retour à la normale */
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s linear 0.6s; 
-    animation: riseBulle .6s ease both;
-  }
-  
-  .track:hover { 
-      transform: scale(2.2); /* Grossit énormément */
-      z-index: 100;
-      /* Au survol, le z-index passe à 100 instantanément (0s de délai) */
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s linear 0s; 
+    animation: popIn .6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
+  /* EFFET HONEYCOMB : On décale vers le bas une bulle sur deux ! */
+  .track:nth-child(even) {
+      top: 60px;
+  }
+  
+  /* L'élément survolé grossit et repousse les autres avec sa marge */
+  .track:hover { 
+      transform: scale(2.1);
+      margin: 60px 45px; /* Pousse physiquement toutes les bulles autour d'elle ! */
+      z-index: 100;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                  margin 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  z-index 0s linear 0s; 
+  }
+
+  /* Bulle active */
   .track.is-playing {
       transform: scale(1.25);
+      margin: 25px 15px; /* Repousse légèrement en statut lecture */
       z-index: 5;
   }
   
   .track.is-playing:hover {
-      transform: scale(2.2);
+      transform: scale(2.1);
+      margin: 60px 45px;
       z-index: 100;
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s linear 0s;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                  margin 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  z-index 0s linear 0s; 
   }
 
   .track::before { display: none; }
   .swatch { display: none; }
 
   .track img {
-    width: 90px;
-    height: 90px;
+    width: 86px;
+    height: 86px;
     border-radius: 50%;
     object-fit: cover;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    /* Seules les ombres et les bordures s'animent ici pour ne pas créer de bug */
-    transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
   
   .track:hover img {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
     border-color: rgba(255, 255, 255, 0.5);
   }
 
@@ -152,7 +169,7 @@
   
   .track h3 {
     font-family:'Anton',sans-serif; 
-    font-size: 15px; 
+    font-size: 14px; 
     letter-spacing: 0.03em; 
     text-transform: uppercase;
     text-align: center;
@@ -160,13 +177,13 @@
     overflow: hidden; 
     text-overflow: ellipsis;
     width: 100%;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
   }
   
   .track audio { display:none !important; }
   .track p { display: none; } 
 
-  .eq { display:none; gap:4px; align-items:flex-end; height:18px; position:absolute; top: 36px; left: 50%; transform: translateX(-50%); z-index: 2; pointer-events: none;}
+  .eq { display:none; gap:4px; align-items:flex-end; height:18px; position:absolute; top: 34px; left: 50%; transform: translateX(-50%); z-index: 2; pointer-events: none;}
   .track.is-playing .eq { display:flex; }
   .eq i { width:4px; border-radius:2px; background:var(--ink); box-shadow:0 0 10px var(--ink); animation:bounce .85s ease-in-out infinite; }
   .eq i:nth-child(2){animation-delay:-.3s} .eq i:nth-child(3){animation-delay:-.55s}
