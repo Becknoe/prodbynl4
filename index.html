@@ -9,8 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg:#0d0d0c; --ink:#e9e7e2; --muted:#6e6c65; --line:rgba(233,231,226,0.12);
-    --c:#e9e7e2; /* couleur du son courant */
+    /* Fond purement rouge, texte blanc, gris clair pour le reste */
+    --bg: #cc0000; 
+    --ink: #ffffff; 
+    --muted: rgba(255, 255, 255, 0.7); 
+    --line: rgba(255, 255, 255, 0.2);
+    --c: #ffffff; 
+  }
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { scroll-behavior:smooth; }
@@ -331,14 +336,14 @@
     });
     addEventListener('keydown',e=>{ if(e.code==='Space' && current){ e.preventDefault(); toggle(); }});
 
-/* ---------- rendu réactif (MODE TÂCHES MASSIVES & FLOU EXTRÊME) ---------- */
+/* ---------- rendu réactif (MODE TÂCHES MOBILES & SAUTILLANTES) ---------- */
     const fx=document.getElementById('fx'), g=fx.getContext('2d');
     let W,H,DPR, colCur=[233,231,226], curE=0, curB=0, time=0;
 
-    // LE SECRET EST LÀ : Un flou gigantesque + boost de couleur, mais opacité réduite
-    fx.style.filter = 'blur(90px) saturate(1.8)';
+    // Le flou est légèrement réduit pour qu'on distingue mieux les formes bouger
+    fx.style.filter = 'blur(60px) saturate(2)';
     fx.style.mixBlendMode = 'screen';
-    fx.style.opacity = '0.4'; // Assez bas pour que le texte reste 100% lisible
+    fx.style.opacity = '0.6';
 
     function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=fx.width=innerWidth*DPR; H=fx.height=innerHeight*DPR; }
     resize(); addEventListener('resize',resize);
@@ -350,9 +355,9 @@
       if(current && !player.paused){
         if(audioReady){ 
           analyser.getByteFrequencyData(freq);
-          tB = avg(freq, 0, 4); // Basses (Kicks/808)
-          tE = avg(freq, 1, freq.length); // Reste du spectre
-          tB = Math.pow(tB, 1.8);
+          tB = avg(freq, 0, 4); 
+          tE = avg(freq, 1, freq.length); 
+          tB = Math.pow(tB, 1.4); // Un peu moins d'exagération pour garder le contrôle
         } else { 
           const t=performance.now()/1000;
           tE=0.42+0.15*Math.sin(t*2.7);
@@ -360,36 +365,37 @@
         }
       }
       
-      curE += (tE - curE) * (tE > curE ? 0.3 : 0.05); 
-      curB += (tB - curB) * (tB > curB ? 0.5 : 0.08);
-      time += 0.002 + (curB * 0.008); 
+      curE += (tE - curE) * (tE > curE ? 0.4 : 0.05); 
+      curB += (tB - curB) * (tB > curB ? 0.6 : 0.1);
+      
+      // L'animation s'accélère beaucoup plus brutalement sur les basses
+      time += 0.004 + (curB * 0.04); 
 
-      // La pochette ambiante en fond bouge très légèrement
       ambient.style.transform = `scale(${(1.05 + curB * 0.08).toFixed(3)})`;
-      if(ambient.classList.contains('on')) ambient.style.opacity = (0.2 + curB * 0.3).toFixed(2);
+      if(ambient.classList.contains('on')) ambient.style.opacity = (0.3 + curB * 0.2).toFixed(2);
 
-      // On nettoie l'écran à chaque frame (le flou CSS bave tout seul)
       g.clearRect(0, 0, W, H);
 
       if(curE > 0.01 || current) {
         const [r,gg,b] = colCur;
         
-        // On génère 4 énormes tâches de couleurs qui se croisent
-        const blobs = 4;
+        // 5 tâches au lieu de 4, pour plus de dynamisme
+        const blobs = 5;
         for(let i=0; i<blobs; i++) {
-           const tOffset = time + (i * 100);
+           const tOffset = time + (i * 120);
            
-           // Mouvement très ample pour balayer tout l'écran
-           const posX = (W/2) + Math.cos(tOffset * 0.5 + i) * (W * 0.6);
-           const posY = (H/2) + Math.sin(tOffset * 0.4 + i*2) * (H * 0.6);
+           // Le "jump" : la tâche se décale physiquement d'un coup quand la basse tape
+           const jump = curB * (i % 2 === 0 ? 80 : -80);
            
-           // Taille GIGANTESQUE : plus grand que l'écran lui-même
-           const baseRadius = Math.max(W, H) * 0.5;
-           // Gonfle avec les 808
-           const radius = baseRadius + (curB * Math.max(W, H) * 0.3);
+           // Trajectoire très très large (W * 0.5) pour qu'elles balayent tout l'écran
+           const posX = (W/2) + Math.cos(tOffset * 0.7 + i*2) * (W * 0.5) + jump;
+           const posY = (H/2) + Math.sin(tOffset * 0.5 + i*1.5) * (H * 0.4) - jump;
            
-           // Opacité des tâches
-           const alpha = 0.3 + (curB * 0.4) + (curE * 0.2);
+           // Taille beaucoup plus petite ! (0.15 au lieu de 0.5)
+           const baseRadius = Math.max(W, H) * 0.15;
+           const radius = baseRadius + (curB * Math.max(W, H) * 0.1); // Elles gonflent juste un peu
+           
+           const alpha = 0.4 + (curB * 0.4);
            
            g.beginPath();
            g.fillStyle = `rgba(${r}, ${gg}, ${b}, ${alpha})`;
