@@ -29,6 +29,7 @@ async function fetchBeats() {
             return;
         }
 
+        // 1. Génération du HTML
         records.forEach(record => {
             const fields = record.fields;
             const title = fields.Titre || "Sans titre";
@@ -45,6 +46,34 @@ async function fetchBeats() {
                 </div>
             `;
             playlistDiv.insertAdjacentHTML('beforeend', trackHtml);
+        });
+
+        // 2. Gestion de la lecture aléatoire et de la pause
+        const audios = document.querySelectorAll('#playlist audio');
+
+        audios.forEach(audio => {
+            // Lancer un autre son aléatoire à la fin
+            audio.addEventListener('ended', (event) => {
+                // On exclut le son qui vient de se terminer pour ne pas le rejouer deux fois de suite
+                const autresAudios = Array.from(audios).filter(a => a !== event.target);
+                
+                if (autresAudios.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * autresAudios.length);
+                    autresAudios[randomIndex].play();
+                } else {
+                    // S'il n'y a qu'un seul son dispo dans la base, on le tourne en boucle
+                    event.target.play();
+                }
+            });
+
+            // Mettre en pause les autres quand un son est lancé manuellement (ou automatiquement)
+            audio.addEventListener('play', (event) => {
+                audios.forEach(a => {
+                    if (a !== event.target) {
+                        a.pause();
+                    }
+                });
+            });
         });
 
     } catch (error) {
